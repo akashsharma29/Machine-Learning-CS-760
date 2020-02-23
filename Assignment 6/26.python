@@ -1,0 +1,283 @@
+import pandas as pd
+import math
+import random
+import matplotlib.pyplot as plt
+
+dataset = pd.read_csv(r"Data.txt", header=None, delimiter=r"\s+")
+train = dataset.values.tolist()
+
+
+
+
+class Node:
+    def __init__(self, type):
+        self.type = type
+        self.value = 0
+        self.value_sum = 0
+        self.delta_u = 0
+        self.delta_v = 0
+        self.parents = []
+        self.gradient = 0
+
+input_nodes = []
+hidden_nodes = []
+output_nodes = []
+
+wt_hidden = [[-0.2, 0.3, 0.1], [0.5, -0.6, -0.4]]
+wt_op = [[-0.8, 0.9, 0.7]]
+ip = [1,-1]
+#label =1
+
+
+
+
+def relu(a):
+    if(a > 0):
+        return a
+    else:
+        return 0
+
+def sigmoid(a):
+    #print('%.30f' % (1/float(1+math.exp(-a))))
+    return (1/float(1+math.exp(-a)))
+
+def setup(ip_size, hd_size, op_size):
+    for i in range(ip_size):
+        input_nodes.append(Node(0))
+    input_nodes.append(Node(1))
+    for i in range(hd_size):
+        hidden_nodes.append(Node(2))
+    hidden_nodes.append(Node(3))
+    for i in range(op_size):
+        output_nodes.append(Node(4))
+        #print(output_nodes[0].type
+    # update bias values
+    input_nodes[ip_size].value = 1
+    hidden_nodes[hd_size].value = 1
+    #print(len(output_nodes[0].parents[1]))
+
+def calSum(node):
+    sum = 0
+    #print(len(node.parents))
+    for i in range(len(node.parents)):
+        #print("multi " + str(node.parents[i][0].value) + " and " + str(node.parents[i][1]) + " = " + str(node.parents[i][0].value*node.parents[i][1]))
+
+        sum += node.parents[i][0].value*node.parents[i][1]
+        #print(sum)
+        #print(0.2-0.3+0.1)
+        node.value_sum = sum
+
+
+    if (node.type == 2):
+        #print(sum)
+        return relu(sum)
+    else:
+        #print(sum)
+        return sigmoid(sum)
+
+def updateInputs(size, data):
+    for i in range(size):
+        #input_nodes[i].value = input("Enter input" + str(i) + "\n")
+        input_nodes[i].value = data[i]
+
+def updateHiddens(size):
+    for i in range(size):
+        #print(hidden_nodes[i].value)
+        hidden_nodes[i].value = calSum(hidden_nodes[i])
+        #print(hidden_nodes[i].value)
+
+def updateOutputs(size):
+    for i in range(size):
+        output_nodes[i].value = calSum(output_nodes[i])
+
+def updateWeights():
+    for i in range(len(hidden_nodes)-1):
+        for j in range(len(input_nodes)):
+            #wt = input("Enter weight to hidden ")
+            #print(wt_hidden[i][j])
+            hidden_nodes[i].parents.append([input_nodes[j], wt_hidden[i][j]])
+            #print(hidden_nodes[i].parent)
+
+    for i in range(len(output_nodes)):
+        for j in range(len(hidden_nodes)):
+            #wt = input("Enter weight to output ")
+            #wt = 0.6 + 0.1*(i+1)
+            #print(wt_op[i][j])
+            output_nodes[i].parents.append([hidden_nodes[j], wt_op[i][j]])
+
+def printHidden(size):
+    for i in range(size):
+        print("O(" + str(i+1) +") = " + str(hidden_nodes[i].value))
+
+def printOutput(size):
+    for i in range(size):
+        print("Y(" + str(i+1) +") = " + '%.5f' % (output_nodes[i].value))
+
+def error(data):
+    sum =0.0
+    for i in range(len(output_nodes)):
+        #print(output_nodes[i].value -1)
+        #print(data[2])
+        sum += math.pow((output_nodes[i].value - data[2]), 2)
+        #print(sum)
+    return (sum/2)
+
+def de_dvo(data):
+    #print('%.5f' % (output_nodes[0].value - label))
+    output_nodes[0].delta_v = (output_nodes[0].value - data[2])
+
+def de_duo(data):
+    sum = (output_nodes[0].value - data[2])*(output_nodes[0].value)*(1- (output_nodes[0].value))
+    output_nodes[0].delta_u = sum
+    #sum = (output_nodes[0].value - label)
+    #print('%.5f' % (sum))
+
+def de_dvh():
+    for j in range(len(hidden_nodes)-1):
+        for i in range(len(output_nodes[0].parents)):
+            if output_nodes[0].parents[i][0] == hidden_nodes[j]:
+                hidden_nodes[j].delta_v= output_nodes[0].delta_u * output_nodes[0].parents[i][1]
+        #print('%.5f' % (hidden_nodes[j].delta_v))
+
+def de_duh():
+    for j in range(len(hidden_nodes)-1):
+        for i in range(len(output_nodes[0].parents)):
+            if output_nodes[0].parents[i][0] == hidden_nodes[j]:
+                if (hidden_nodes[j].value_sum >= 0):
+                    hidden_nodes[j].delta_u= hidden_nodes[j].delta_v
+                else:
+                    hidden_nodes[j].delta_u= 0
+        #print('%.5f' % (hidden_nodes[j].delta_u))
+
+def de_weight():
+    ##for i in range(len(hidden_nodes)-1):
+    ##   print(i)
+    ##  for j in range(len(hidden_nodes[i].parents)):
+    #     print('%.5f' % (hidden_nodes[i].parents[j][0].value * hidden_nodes[i].delta_u))
+
+    # for i in range(len(output_nodes)):
+    #     print(i)
+    #     for j in range(len(output_nodes[i].parents)):
+    #         print('%.5f' % (output_nodes[i].parents[j][0].value*output_nodes[i].delta_u))
+
+    print( '%.5f' % (hidden_nodes[0].parents[2][0].value * hidden_nodes[0].delta_u) + " " +
+           '%.5f' % (hidden_nodes[0].parents[0][0].value * hidden_nodes[0].delta_u) + " " +
+           '%.5f' % (hidden_nodes[0].parents[1][0].value * hidden_nodes[0].delta_u) + " " +
+           '%.5f' % (hidden_nodes[1].parents[2][0].value * hidden_nodes[1].delta_u) + " " +
+           '%.5f' % (hidden_nodes[1].parents[0][0].value * hidden_nodes[1].delta_u) + " " +
+           '%.5f' % (hidden_nodes[1].parents[1][0].value * hidden_nodes[1].delta_u) + " " +
+           '%.5f' % (output_nodes[0].parents[2][0].value * output_nodes[0].delta_u) + " " +
+           '%.5f' % (output_nodes[0].parents[0][0].value * output_nodes[0].delta_u) + " " +
+           '%.5f' % (output_nodes[0].parents[1][0].value * output_nodes[0].delta_u) + " ")
+
+def newWeights():
+    for i in range(len(hidden_nodes)-1):
+        for j in range(len(hidden_nodes[i].parents)):
+            hidden_nodes[i].parents[j][1] -= (0.1*hidden_nodes[i].parents[j][0].value * hidden_nodes[i].delta_u)
+
+    for i in range(len(output_nodes)):
+        #print(i)
+        for j in range(len(output_nodes[i].parents)):
+            output_nodes[i].parents[j][1] -= (0.1*output_nodes[i].parents[j][0].value*output_nodes[i].delta_u)
+
+def printWeights():
+    print( '%.5f' % (hidden_nodes[0].parents[2][1]) + " " +
+           '%.5f' % (hidden_nodes[0].parents[0][1]) + " " +
+           '%.5f' % (hidden_nodes[0].parents[1][1]) + " " +
+           '%.5f' % (hidden_nodes[1].parents[2][1]) + " " +
+           '%.5f' % (hidden_nodes[1].parents[0][1]) + " " +
+           '%.5f' % (hidden_nodes[1].parents[1][1]) + " " +
+           '%.5f' % (output_nodes[0].parents[2][1]) + " " +
+           '%.5f' % (output_nodes[0].parents[0][1]) + " " +
+           '%.5f' % (output_nodes[0].parents[1][1]) + " ")
+
+def SGD():
+    count = 0
+    round = 0
+    plot = []
+    #printWeights()
+    for i in range(10000):
+        #printWeights()
+        data_pt = random.choice(train)
+        count += 1
+        #print(data_pt)
+        #print(data_pt)
+        updateInputs(2, data_pt)
+        updateHiddens(2)
+        updateOutputs(1)
+
+        #print(input_nodes[0].value)
+        #print(input_nodes[1].value)
+        #print(input_nodes[2].value)
+        #print(hidden_nodes[0].value)
+        #print(hidden_nodes[1].value)
+        #print(hidden_nodes[2].value)
+        #print(output_nodes[0].value)
+        de_dvo(data_pt)
+        de_duo(data_pt)
+        de_dvh()
+        de_duh()
+        #de_weight()
+        #printWeights()
+        newWeights()
+        #updateHiddens(2)
+        #updateOutputs(1)
+        #print(len(hidden_nodes[0].parents))
+        #printWeights()
+        if (count == 100):
+            loss = 0
+            #print(loss)
+            round+= 1
+            for i in range(len(train)):
+                data_pt = train[i]
+                updateInputs(2, data_pt)
+                updateHiddens(2)
+                updateOutputs(1)
+                loss += error(data_pt)
+                #print(error(data_pt))
+            #print('%.5f' % (loss))
+            count = 0
+            plot.append([round*100, loss])
+    print(plot)
+    return plot
+
+def plt_line(data):
+    x = []
+    y = []
+    
+    for i in range(len(data)):
+        x.append(data[i][0])
+        y.append(data[i][1])
+    plt.plot(x, y, color = 'Red')
+    plt.xlabel("round")
+    plt.ylabel("training set error")
+    plt.show()
+
+def main():
+    setup(2,2,1)
+    updateWeights()
+    #updateInputs(2, )
+    #updateHiddens(2)
+    #updateOutputs(1)
+    #error()
+    #de_dvo()
+    #de_duo()
+    #de_dvh()
+    #de_duh()
+    #de_weight()
+    #printWeights()
+    #error()
+    #printHidden(2)
+    #printOutput(1)
+    #newWeights()
+    #printWeights()
+    #updateHiddens(2)
+    #updateOutputs(1)
+    #error()
+    plot = SGD()
+    plt_line(plot)
+
+
+#    print(len(output_nodes))
+
+main()

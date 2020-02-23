@@ -1,0 +1,180 @@
+import math
+import numpy as np
+from mpl_toolkits import mplot3d
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+class Node:
+    def __init__(self, type):
+        self.type = type
+        self.value = 0
+        self.delta = 0
+        self.parents = []
+
+input_nodes = []
+hidden_nodes = []
+output_nodes = []
+result = []
+
+def relu(a):
+    if(a > 0):
+        return a
+    else:
+        return 0
+
+def sigmoid(a):
+    #print('%.30f' % (1/float(1+math.exp(-a))))
+    return (1/float(1+math.exp(-a)))
+
+def setup(ip_size, hd_size, op_size, hidden_layers):
+    for i in range(ip_size):
+        input_nodes.append(Node(0))
+    input_nodes.append(Node(1))
+    for i in range(hidden_layers):
+        for i in range(hd_size):
+            hidden_nodes.append(Node(2))
+        hidden_nodes.append(Node(3))
+    for i in range(op_size):
+        output_nodes.append(Node(4))
+        #print(output_nodes[0].type
+    # update bias values
+    #input_nodes[ip_size].value = np.random.normal(loc=0.0, scale=1.0, size=None)
+    input_nodes[ip_size].value = 1
+    a = np.random.normal(loc=0.0, scale=1.0, size=41)
+    #print(a)
+    for i in range(hidden_layers):
+        #hidden_nodes[hd_size].value = np.random.normal(loc=0.0, scale=1.0, size=None)
+        hidden_nodes[hd_size].value = 1
+
+    # update hidden weights
+    for i in range(len(hidden_nodes)-1):
+        for j in range(len(input_nodes)):
+            wt = np.random.normal(loc=0.0, scale=1.0, size=None)
+            hidden_nodes[i].parents.append([input_nodes[j], wt])
+
+    # initialize to o/p weights
+    for i in range(len(output_nodes)):
+        for j in range(len(hidden_nodes)):
+            wt=np.random.normal(loc=0.0, scale=1.0, size=None)
+            output_nodes[i].parents.append([hidden_nodes[j], wt])
+
+    #print(len(output_nodes[0].parents[1]))
+def calSum(node):
+    sum = 0
+    #print(len(node.parents))
+    for i in range(len(node.parents)):
+        sum += node.parents[i][0].value*node.parents[i][1]
+
+    if (node.type == 2):
+        #print(sum)
+        return relu(sum)
+    else:
+        return sigmoid(sum)
+
+def updateInputs(size, input1, input2):
+
+    input_nodes[0].value = input1
+    input_nodes[1].value = input2
+    #print(input_nodes[0].value)
+    #print(input_nodes[1].value)
+
+def updateHiddens(size):
+    for i in range(size):
+        hidden_nodes[i].value = calSum(hidden_nodes[i])
+
+def updateOutputs(size):
+    for i in range(size):
+        output_nodes[i].value = calSum(output_nodes[i])
+
+def printHidden(size):
+    for i in range(size):
+        print("$o_{" +str(i+1) +"} = " + str(hidden_nodes[i].value) + "$ \\\\" )
+
+def printOutput(size):
+    for i in range(size):
+        print("$y = " + '%.30f' % (output_nodes[i].value)+ "$ \\\\")
+def getop(x,y):
+    #print("yes")
+    #for i in range(len(result)):
+        #if(result[i][0]==x-result[i][1]==y).all():
+            #return result[i][2]
+            #print(result[i][2])
+
+    #print(x)
+    #print(y)
+    return x+y
+    #return (result[5][1] + result[5][0])
+
+def results():
+    x= np.arange(-5.0, 5.1, 0.1)
+    y= np.arange(-5.0, 5.1, 0.1)
+    #print(len(y))
+    list = []
+    array = [[0]*101]*101
+    biglist = []
+    #print(x)
+    #print(y)
+    for i in range(len(x)):
+        list = []
+        for j in range(len(y)):
+            #print(x[i])
+            #print(y[i])
+            updateInputs(2, x[i], y[j])
+            updateHiddens(10)
+            updateOutputs(1)
+            #print(output_nodes[0].value)
+            array[i][j] = output_nodes[0].value
+
+            #result.append([i, j, output_nodes[0].value])
+            list.append(output_nodes[0].value)
+            #print(list)
+
+        biglist.append(list)
+    #print(biglist)
+    #print(result)
+    #for i in range(len(x)):
+     #   print(array[i][0])
+
+    fig = plt.figure()
+    ax = plt.axes(projection="3d")
+    #ax = fig.add_subplot(111, projection = "3d")
+    X, Y = np.meshgrid(x, y)
+    #print(np.meshgrid(x, y))
+    #getop(4.9999999999999645, 4.799999999999965)
+    #getop(X,Y)
+    #print(Y)
+    #Z = getop(X,Y)
+    cols = []
+    cols.append('red')
+    
+    k = biglist
+    K = np.array(k)
+    #print(K)
+    #print(len(biglist[0]))
+    z = array
+    Z = np.array(z)
+    #print(Z)
+    #ax.plot_wireframe(X, Y, Z, color='green')
+    #ax.plot_surface(X, Y, K, rstride=1, cstride=1, cmap='winter', edgecolor='none')
+    #plt.style.use('seaborn-white')
+    ax.plot_surface(X, Y, K,  cmap="plasma")
+    plt.show()
+    return result
+
+    #print(a)
+    #print(b[98])
+
+def main():
+    setup(2,10,1,1)
+    #updateInputs(2)
+    #updateHiddens(10)
+    #updateOutputs(1)
+    #printHidden(10)
+    #printOutput(1)
+    toplot = results()
+
+
+#    print(len(output_nodes))
+
+main()
